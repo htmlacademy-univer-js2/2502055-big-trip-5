@@ -1,0 +1,30 @@
+const mockOffers = [
+  { type: 'Taxi', label: 'Order Uber', price: 20 },
+  { type: 'Bus', label: 'Buy meal', price: 30 },
+  { type: 'Bus', label: 'Add comfort ticket', price: 90 },
+  { type: 'Train', label: 'Buy Meal', price: 40 },
+  { type: 'Train', label: 'Add sleeping place', price: 120 },
+  { type: 'Drive', label: 'Rent a car', price: 400 },
+  { type: 'Flight', label: 'Add luggage', price: 50 },
+  { type: 'Sightseeing', label: 'Buy sunglasses', price: 40 },
+  { type: 'Taxi', label: 'Add tip', price: 47 },
+  { type: 'Flight', label: 'Buy in-flight meal', price: 125 },
+  { type: 'Drive', label: 'Child seat', price: 78 },
+  { type: 'Sightseeing', label: 'Private tour', price: 199 },
+  { type: 'Check-in', label: 'Add breakfast', price: 66 },
+  { type: 'Restaurant', label: 'Book a window table', price: 51 },
+  { type: 'Train', label: 'Seat upgrade', price: 110 },
+  { type: 'Bus', label: 'Buy meal', price: 38 },
+  { type: 'Taxi', label: 'Priority ride', price: 56 },
+  { type: 'Flight', label: 'Priority boarding', price: 212 },
+  { type: 'Sightseeing', label: 'Audio guide', price: 44 },
+  { type: 'Drive', label: 'Full insurance', price: 140 },
+  { type: 'Restaurant', label: 'VIP area', price: 115 },
+  { type: 'Train', label: 'Add sleeping place', price: 133 },
+  { type: 'Check-in', label: 'Late checkout', price: 60 },
+  { type: 'Flight', label: 'Wi-Fi access', price: 89 },
+  { type: 'Bus', label: 'Express line', price: 77 },
+  { type: 'Taxi', label: 'Call a taxi', price: 33 }
+];
+
+export {mockOffers};
