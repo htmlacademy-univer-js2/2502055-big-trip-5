@@ -1,24 +1,12 @@
-import {createElement} from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 
 function createNewListTemplate() {
   return `<ul class="trip-events__list">
     </ul>`;
 }
 
-export default class ListView {
-  getTemplate() {
+export default class ListView extends AbstractView{
+  get template() {
     return createNewListTemplate();
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-
-    return this.element;
-  }
-
-  removeELement() {
-    this.element = null;
   }
 }

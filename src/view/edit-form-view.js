@@ -1,23 +1,95 @@
-import {createElement} from '../render.js';
-import { createDestinationsDatalist, formatEditDate, getAvailableOffers, getOffersAsHtml, drawDestinationInfo } from '../utils.js';
+import AbstractView from '../framework/view/abstract-view.js';
 
-const emptyPoint = {
-  type: 'Flight',
-  startDate: '',
-  endDate: '',
-  price: 0,
-  destination: {city: '', description: '', photos: []},
-  offers: [],
-  isFavorite: false
+const formatEditDate = (str) => {
+  if (str.length === 0) {
+    return str;
+  }
+
+  const [date, time] = str.split('T');
+  const [year, month, day] = date.split('-');
+  const shortYear = year.slice(2);
+  return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${shortYear} ${time}`;
 };
 
-function createEditEventTemplate(point, destinations, offers, isEdit) {
+const createDestinationsDatalist = (destinations) => {
+  let html = '';
+  for (const destination of destinations) {
+    html += `<option value="${destination.city}"></option>`;
+  }
+
+  return html;
+};
+
+const drawDestinationInfo = (destination) => {
+  let html = '';
+
+  if (destination.description.length !== 0) {
+    html = `<section class="event__section  event__section--destination">
+                    <h3 class="event__section-title  event__section-title--destination">Destination</h3>
+                    <p class="event__destination-description">${destination.description}</p>`;
+    if (destination.photos.length !== 0) {
+      html += '<div class="event__photos-container"><div class="event__photos-tape">';
+      for (const url of destination.photos) {
+        html += `<img class="event__photo" src="${url}" alt="Event photo"></img>`;
+      }
+      html += '</div></div>';
+    }
+    html += '</section>';
+  }
+
+  return html;
+};
+
+const getAvailableOffers = (offers, point) => {
+  const availableOffers = [];
+  for (const offer of offers) {
+    if (offer.type === point.type) {
+      availableOffers.push(offer);
+    }
+  }
+
+  return availableOffers;
+};
+
+const getOffersAsHtml = (offers, point) => {
+  let html = '';
+
+  if (offers.length !== 0) {
+    html = `<section class="event__section  event__section--offers">
+    <h3 class="event__section-title  event__section-title--offers">Offers</h3>
+
+    <div class="event__available-offers">`;
+    for (const offer of offers) {
+      let flag = '';
+      if (point.offers.some((o) => o.label === offer.label)) {
+        flag = 'checked';
+      }
+      html += `<div class="event__offer-selector">
+      <input class="event__offer-checkbox  visually-hidden" id="${'somethinghere'}" type="checkbox" name="event-offer-luggage" ${flag}>
+      <label class="event__offer-label" for="event-offer-luggage-1">
+        <span class="event__offer-title">${offer.label}</span>
+        &plus;&euro;&nbsp;
+        <span class="event__offer-price">${offer.price}</span>
+      </label>
+    </div>`;
+    }
+    html += '</div></section>';
+  }
+
+  return html;
+};
+
+
+function createEditEventTemplate(point, destinations, offers, onClick) {
   const {type, startDate, endDate, price, destination} = point;
   let editBtn = '';
-  if (isEdit) {
+  let denyBtnText = 'Cancel';
+
+  if (onClick) {
     editBtn = `<button class="event__rollup-btn" type="button">
     <span class="visually-hidden">Open event</span>
-  </button>`;
+    </button>`;
+    denyBtnText = 'Delete';
   }
 
   return `<form class="event event--edit" action="#" method="post">
@@ -108,7 +180,7 @@ function createEditEventTemplate(point, destinations, offers, isEdit) {
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
-                  <button class="event__reset-btn" type="reset">Delete</button>
+                  <button class="event__reset-btn" type="reset">${denyBtnText}</button>
                   ${editBtn}
                 </header>
                 <section class="event__details">
@@ -118,27 +190,48 @@ function createEditEventTemplate(point, destinations, offers, isEdit) {
               </form>`;
 }
 
-export default class EditEventView {
-  constructor({point = emptyPoint, destinations, offers, isEdit}) {
-    this.point = point;
+export default class EditEventView extends AbstractView {
+  #handleClick = null;
+  #handleSubmit = null;
+  #handleAbortion = null;
+  #point = null;
+
+  constructor({point, destinations, offers, onClick = null, onSubmit, onAbortion}) {
+    super();
+    this.#point = point;
     this.destinations = destinations;
     this.offers = offers;
-    this.isEdit = isEdit;
-  }
-
-  getTemplate() {
-    return createEditEventTemplate(this.point, this.destinations, this.offers, this.isEdit);
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
+    if (onClick) {
+      this.#handleClick = onClick;
+      this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#clickHandler);
     }
 
-    return this.element;
+    this.#handleSubmit = onSubmit;
+    this.element.addEventListener('submit', this.#submitHandler);
+    this.#handleAbortion = onAbortion;
+    this.element.querySelector('.event__reset-btn').addEventListener('click', this.#abortionHandler);
   }
 
-  removeELement() {
-    this.element = null;
+  get point() {
+    return this.#point;
   }
+
+  get template() {
+    return createEditEventTemplate(this.point, this.destinations, this.offers, this.#handleClick);
+  }
+
+  #clickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleClick();
+  };
+
+  #submitHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleSubmit();
+  };
+
+  #abortionHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleAbortion();
+  };
 }
