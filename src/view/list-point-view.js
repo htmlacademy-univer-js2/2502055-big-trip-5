@@ -1,5 +1,73 @@
-import {createElement} from '../render.js';
-import { calculateDuration, getTime, getDate, formatDate, generateOffersHtml, operateFavoriteButton, operatePrice } from '../utils.js';
+import AbstractView from '../framework/view/abstract-view.js';
+import {operatePrice} from '../utils.js';
+
+const getTime = (str) => {
+  const date = new Date(str);
+  const hrs = date.getHours().toString().padStart(2, '0');
+  const mins = date.getMinutes().toString().padStart(2, '0');
+  return `${hrs}:${mins}`;
+};
+
+const getDate = (str) => {
+  const date = new Date(str);
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatDate = (str) => {
+  const month = str.split('-')[1];
+  const day = str.split('-')[2];
+  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+  return `${day} ${months[parseInt(month, 10) - 1]}`;
+};
+
+const calculateDuration = (start, end) => {
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  const разницаМс = endDate - startDate;
+  const totalMinutes = Math.floor(разницаМс / (1000 * 60));
+
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const minutes = totalMinutes % 60;
+
+  if (totalMinutes < 60) {
+    return `${minutes.toString().padStart(2, '0')}M`;
+  } else if (totalMinutes < 1440) {
+    if (minutes === 0) {
+      return `${hours.toString().padStart(2, '0')}H`;
+    }
+    return `${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M`;
+  } else {
+    return `${days.toString().padStart(2, '0')}D ${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M`;
+  }
+};
+
+const operateFavoriteButton = (flag) => {
+  if (flag) {
+    return 'event__favorite-btn--active';
+  }
+
+  return '';
+};
+
+const generateOffersHtml = (offers) => {
+  let offersHtml = '';
+  for (let i = 0; i < offers.length; ++i) {
+    offersHtml += `<li class="event__offer">
+                      <span class="event__offer-title">${offers[i].label}</span>
+                      &plus;&euro;&nbsp;
+                      <span class="event__offer-price">${offers[i].price}</span>
+                    </li>`;
+  }
+  return offersHtml;
+};
 
 function createNewPointTemplate(point) {
   const {type, startDate, endDate, destination, offers, isFavorite} = point;
@@ -39,24 +107,27 @@ function createNewPointTemplate(point) {
           </li>`;
 }
 
-export default class PointView {
-  constructor({point}) {
-    this.point = point;
+export default class PointView extends AbstractView{
+  #handleClick = null;
+  #point = null;
+
+  constructor({point, onClick}) {
+    super();
+    this.#point = point;
+    this.#handleClick = onClick;
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#clickHandler);
   }
 
-  getTemplate() {
+  get template() {
     return createNewPointTemplate(this.point);
   }
 
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-
-    return this.element;
+  get point() {
+    return this.#point;
   }
 
-  removeELement() {
-    this.element = null;
-  }
+  #clickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleClick();
+  };
 }
