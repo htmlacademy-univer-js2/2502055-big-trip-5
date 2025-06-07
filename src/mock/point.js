@@ -13,8 +13,8 @@ const mockPoints = [
   },
   {
     type: 'Check-in',
-    startDate: '2025-04-05T11:00',
-    endDate: '2025-04-05T13:00',
+    startDate: '2025-12-12T11:00',
+    endDate: '2025-12-12T13:00',
     price: 560,
     destination: getRandomArrayElement(mockDestinations),
     offers: [{type: 'Check-in', label : 'Add breakfast', price : 66}],
@@ -49,8 +49,8 @@ const mockPoints = [
   },
   {
     type: 'Ship',
-    startDate: '2025-05-09T13:15',
-    endDate: '2025-05-09T17:10',
+    startDate: '2025-06-07T13:15',
+    endDate: '2025-06-07T19:10',
     price: 1300,
     destination: getRandomArrayElement(mockDestinations),
     offers: [],
@@ -60,4 +60,4 @@ const mockPoints = [
 
 const getRandomPoint = () => getRandomArrayElement(mockPoints);
 
-export {getRandomPoint};
+export {getRandomPoint, mockPoints};
