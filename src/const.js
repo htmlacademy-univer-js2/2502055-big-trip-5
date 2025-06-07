@@ -14,4 +14,11 @@ const emptyPoint = {
   isFavorite: false
 };
 
-export {emptyPoint};
+const MESSAGES = {
+  'past': 'There are no past events now',
+  'future': 'There are no future events now',
+  'present': 'There are no present events now',
+  'everything': 'Click New Event to create your first point'
+};
+
+export {emptyPoint, MESSAGES};
