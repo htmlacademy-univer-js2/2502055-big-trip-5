@@ -1,3 +1,5 @@
+import { getRandomNumber } from './utils.js';
+
 const defaultDestination = {
   city: '',
   description: '',
@@ -5,6 +7,7 @@ const defaultDestination = {
 };
 
 const emptyPoint = {
+  id: getRandomNumber(0, 500),
   type: 'Flight',
   startDate: '',
   endDate: '',
