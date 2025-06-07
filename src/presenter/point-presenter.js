@@ -34,15 +34,6 @@ export default class PointPresenter {
       onFavoriteClick: this.#handleFavoriteClick
     });
 
-    this.#editPointComponent = new EditEventView({
-      point: this.#point,
-      destinations: this.#destinations,
-      offers: this.#offers,
-      onClick: this.#handleFormClose,
-      onSubmit: this.#handleFormSubmit,
-      onAbortion: this.#handlePointDeletion
-    });
-
     if (prevPointComponent === null || prevEditPointComponent === null) {
       render(this.#pointComponent, this.container);
       return;
@@ -68,28 +59,44 @@ export default class PointPresenter {
 
   #replacePointToForm() {
     this.#handleModeChange();
-    const parent = this.#pointComponent.element.parentElement;
-    const prevElement = this.#pointComponent.element;
-    parent.insertBefore(this.#editPointComponent.element, prevElement.nextSibling);
-    this.#pointComponent.element.style.display = 'none';
+    this.#editPointComponent = new EditEventView({
+      point: this.#point,
+      destinations: this.#destinations,
+      offers: this.#offers,
+      isNewPoint: false,
+      onSubmit: this.#handleFormSubmit,
+      onDelete: this.#handlePointDeletion,
+      onClose: this.#handleFormClose
+    });
+
+    replace(this.#editPointComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#escKeyDownHandler);
   }
 
   #replaceFormToPoint() {
-    if (this.#editPointComponent.element.parentElement) {
-      this.#editPointComponent.element.remove();
+    if (!this.#pointComponent?.element || !this.#editPointComponent?.element) {
+      return;
     }
-    this.#pointComponent.element.style.display = '';
+
+    const formParent = this.#editPointComponent.element.parentElement;
+
+    if (!formParent) {
+      this.#pointComponent.element.style.display = '';
+      document.removeEventListener('keydown', this.#escKeyDownHandler);
+      return;
+    }
+
+    replace(this.#pointComponent, this.#editPointComponent);
     document.removeEventListener('keydown', this.#escKeyDownHandler);
   }
 
   destroy() {
-    if (this.#pointComponent?.element.parentElement) {
-      this.#pointComponent.element.remove();
+    if (this.#pointComponent) {
+      remove(this.#pointComponent);
     }
 
-    if (this.#editPointComponent?.element.parentElement) {
-      this.#editPointComponent.element.remove();
+    if (this.#editPointComponent) {
+      remove(this.#editPointComponent);
     }
 
     document.removeEventListener('keydown', this.#escKeyDownHandler);
@@ -121,5 +128,6 @@ export default class PointPresenter {
 
   #handleFormClose = () => {
     this.#replaceFormToPoint();
+    document.removeEventListener('keydown', this.#escKeyDownHandler);
   };
 }

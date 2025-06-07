@@ -43,4 +43,8 @@ export default class PointsModel {
       return false;
     }
   }
+
+  addPoint(point) {
+    this.#points.push(point);
+  }
 }

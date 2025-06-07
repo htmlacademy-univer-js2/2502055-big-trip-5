@@ -8,7 +8,7 @@ import InfoView from '../view/trip-info-view.js';
 import EmptyMessageView from '../view/empty-message-views.js';
 import FilterView from '../view/filter-view.js';
 import {emptyPoint, MESSAGES } from '../const.js';
-import { sortByDate, sortByDuration, sortByPrice } from '../utils.js';
+import { getRandomNumber, sortByDate, sortByDuration, sortByPrice } from '../utils.js';
 import PointPresenter from './point-presenter.js';
 import EditEventView from '../view/edit-form-view.js';
 
@@ -84,7 +84,7 @@ export default class RoutePresenter {
       container: this.#pointsListComponent.element,
       destinations: this.destinations,
       offers: this.offers,
-      onDataChange: this.#handlePointChange,
+      onDataChange: this.#handlePointsChange,
       onModeChange: this.#handleModeChange,
     });
 
@@ -114,7 +114,7 @@ export default class RoutePresenter {
     this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
 
-  #handlePointChange = (actionType, updatedPoint) => {
+  #handlePointsChange = (actionType, updatedPoint) => {
     switch (actionType) {
       case 'UPDATE':
         this.#pointsModel.updatePoint(updatedPoint);
@@ -124,6 +124,11 @@ export default class RoutePresenter {
         this.#pointsModel.deletePoint(updatedPoint.id);
         this.#pointPresenters.get(updatedPoint.id).destroy();
         this.#pointPresenters.delete(updatedPoint.id);
+        this.#updatePointsData();
+        break;
+      case 'ADD':
+        updatedPoint.id = getRandomNumber(0, 500);
+        this.#pointsModel.addPoint(updatedPoint);
         this.#updatePointsData();
         break;
     }
@@ -201,8 +206,9 @@ export default class RoutePresenter {
       point: emptyPoint,
       destinations: this.destinations,
       offers: this.offers,
-      onSubmit: {},
-      onAbortion: this.#handleAbortion
+      isNewPoint: true,
+      onSubmit: this.#handleFormSubmit,
+      onClose: this.#handleAbortion
     });
     render(this.#newPointForm, this.#routeContainer, RenderPosition.AFTERBEGIN);
   };
@@ -215,6 +221,12 @@ export default class RoutePresenter {
     this.#addNewBtn.element.disabled = true;
     this.#handleModeChange();
     this.#renderNewPointForm();
+  };
+
+  #handleFormSubmit = (point) => {
+    this.#handlePointsChange('ADD', point);
+    this.#addNewBtn.element.disabled = false;
+    remove(this.#newPointForm);
   };
 
   #handleAbortion = () => {
