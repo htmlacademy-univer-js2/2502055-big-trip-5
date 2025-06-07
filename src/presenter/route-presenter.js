@@ -1,40 +1,43 @@
-import {replace, remove, render, RenderPosition} from '../framework/render.js';
+import { render, remove, RenderPosition } from '../framework/render.js';
 import ListView from '../view/list-view.js';
 import RouteView from '../view/route-view.js';
 import SortView from '../view/sort-view.js';
-import PointView from '../view/list-point-view.js';
-import EditEventView from '../view/edit-form-view.js';
 import AddNewButtonView from '../view/add-new-button-view.js';
 import HeaderView from '../view/header-view.js';
 import InfoView from '../view/trip-info-view.js';
 import EmptyMessageView from '../view/empty-message-views.js';
 import FilterView from '../view/filter-view.js';
-import {emptyPoint, MESSAGES} from '../const.js';
+import {emptyPoint, MESSAGES } from '../const.js';
 import { sortByDate, sortByDuration, sortByPrice } from '../utils.js';
+import PointPresenter from './point-presenter.js';
+import EditEventView from '../view/edit-form-view.js';
 
 export default class RoutePresenter {
   #routeComponent = new RouteView();
   #pointsListComponent = new ListView();
   #headerComponent = new HeaderView();
-  #activePointForm = null;
   #headerContainer = null;
   #routeContainer = null;
   #pointsModel = null;
   #filterView = null;
   #sortView = null;
+  #newPointForm = null;
   #currentFilter = 'everything';
   #currentSortType = 'day';
-  #filteredPoints = null;
-  #emptyMessage = new EmptyMessageView('everything');
+  #filteredPoints = [];
+  #emptyMessage = null;
+  #pointPresenters = new Map();
 
-  constructor({routeContainer, pointsModel, headerContainer}) {
+  constructor({ routeContainer, pointsModel, headerContainer }) {
     this.#routeContainer = routeContainer;
     this.#pointsModel = pointsModel;
     this.#headerContainer = headerContainer;
+
     this.#filterView = new FilterView({
       currentFilter: this.#currentFilter,
       onFilterChange: this.#handleFilterChange
     });
+
     this.#sortView = new SortView({
       currentSortType: this.#currentSortType,
       onSortTypeChange: this.#handleSortTypeChange
@@ -43,84 +46,93 @@ export default class RoutePresenter {
 
   init() {
     this.points = this.#pointsModel.points;
-    this.#filteredPoints = this.points;
     this.destinations = this.#pointsModel.destinations;
     this.offers = this.#pointsModel.offers;
+
+    this.#renderHeader();
+    this.#renderRouteComponents();
+    this.#filterPoints();
+    this.#sortPoints();
+    this.#renderPointsList();
+
+  }
+
+  #renderHeader() {
     render(this.#headerComponent, this.#headerContainer);
     render(new InfoView(this.points), this.#headerComponent.element);
     render(this.#filterView, this.#headerComponent.element);
     render(this.#addNewBtn, this.#headerComponent.element, RenderPosition.BEFOREEND);
-    render(this.#routeComponent, this.#routeContainer);
-    render(this.#sortView, this.#routeComponent.element);
-    this.#renderPointsList();
   }
 
-  #renderNewPointForm() {
-    this.#activePointForm = new EditEventView({
-      point: emptyPoint,
-      destinations: this.destinations,
-      offers: this.offers,
-      onSubmit: () => {},
-      onAbortion: () => {
-        this.#addNewBtn.element.disabled = false;
-        remove(this.#activePointForm);
-      }});
-    render(this.#activePointForm, this.#pointsListComponent.element, RenderPosition.AFTERBEGIN);
+  #renderRouteComponents() {
+    render(this.#routeComponent, this.#routeContainer);
+    render(this.#sortView, this.#routeComponent.element);
+    render(this.#pointsListComponent, this.#routeComponent.element);
+  }
+
+  #renderPointsList() {
+    if (this.#filteredPoints.length === 0) {
+      this.#renderEmptyMessage(this.#currentFilter);
+      return;
+    }
+
+    this.#filteredPoints.forEach((point) => this.#renderPoint(point));
   }
 
   #renderPoint(point) {
-    const escKeyDownHandler = (evt) => {
-      if (evt.key === 'Escape') {
-        evt.preventDefault();
-        replacePointToForm();
-        document.removeEventListener('keydown', escKeyDownHandler);
-      }
-    };
-
-    const editPointComponent = new EditEventView({
-      point: point,
+    const pointPresenter = new PointPresenter({
+      container: this.#pointsListComponent.element,
       destinations: this.destinations,
       offers: this.offers,
-      onClick: () => {
-        replacePointToForm();
-      },
-      onAbortion: () => {
-        remove(editPointComponent);
-        this.points.pop(point);
-      },
-      onSubmit: () => {
-        this.#activePointForm = null;
-        replacePointToForm();
-        document.removeEventListener('keydown', escKeyDownHandler);
-      },
+      onDataChange: this.#handlePointChange,
+      onModeChange: this.#handleModeChange,
     });
 
-    const pointComponent = new PointView({
-      point: point,
-      onClick: () => {
-        this.#activePointForm = editPointComponent;
-        replaceFormToPoint();
-        document.addEventListener('keydown', escKeyDownHandler);
-      },
-    });
-
-    function replacePointToForm() {
-      replace(pointComponent, editPointComponent);
-    }
-
-    function replaceFormToPoint() {
-      replace(editPointComponent, pointComponent);
-    }
-
-    render(pointComponent, this.#pointsListComponent.element);
+    pointPresenter.init(point);
+    this.#pointPresenters.set(point.id, pointPresenter);
   }
 
-  #addNewEventButtonClick = () => {
-    this.#addNewBtn.element.disabled = true;
-    this.#renderNewPointForm();
+  #updatePointsData() {
+    this.points = this.#pointsModel.points;
+    this.#filterPoints();
+    this.#sortPoints();
+    this.#clearPointsList();
+    this.#renderPointsList();
+  }
+
+  #clearPointsList() {
+    this.#pointPresenters.forEach((presenter) => presenter.destroy());
+    this.#pointPresenters.clear();
+
+    if (this.#emptyMessage) {
+      remove(this.#emptyMessage);
+      this.#emptyMessage = null;
+    }
+  }
+
+  #handleModeChange = () => {
+    this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
 
-  #addNewBtn = new AddNewButtonView({onClick: this.#addNewEventButtonClick});
+  #handlePointChange = (actionType, updatedPoint) => {
+    switch (actionType) {
+      case 'UPDATE':
+        this.#pointsModel.updatePoint(updatedPoint);
+        this.#updatePointsData();
+        break;
+      case 'DELETE':
+        this.#pointsModel.deletePoint(updatedPoint.id);
+        this.#pointPresenters.get(updatedPoint.id).destroy();
+        this.#pointPresenters.delete(updatedPoint.id);
+        this.#updatePointsData();
+        break;
+    }
+
+    this.#filterPoints();
+    this.#sortPoints();
+    this.#clearPointsList();
+    this.#renderPointsList();
+  };
 
   #handleFilterChange = (filterType) => {
     this.#currentFilter = filterType;
@@ -132,7 +144,7 @@ export default class RoutePresenter {
     this.#renderPointsList();
   };
 
-  #filterPoints = () => {
+  #filterPoints() {
     const now = new Date();
     switch (this.#currentFilter) {
       case 'future':
@@ -149,40 +161,20 @@ export default class RoutePresenter {
       default:
         this.#filteredPoints = [...this.points];
     }
-  };
-
-  #renderPointsList = () => {
-    render(this.#pointsListComponent, this.#routeComponent.element);
-    if (this.#filteredPoints.length === 0) {
-      this.#renderEmptyMessage(this.#currentFilter);
-    } else {
-      this.#filteredPoints.forEach((point) => this.#renderPoint(point));
-    }
-  };
-
-  #renderEmptyMessage = (filterType) => {
-    const message = MESSAGES[filterType];
-    this.#emptyMessage = new EmptyMessageView(message);
-    render(this.#emptyMessage, this.#routeComponent.element);
-  };
-
-  #clearPointsList = () => {
-    remove(this.#emptyMessage);
-    this.#pointsListComponent.element.innerHTML = '';
-  };
+  }
 
   #handleSortTypeChange = (sortType) => {
     if (this.#currentSortType === sortType) {
       return;
     }
-
     this.#currentSortType = sortType;
     this.#sortPoints();
     this.#clearPointsList();
     this.#renderPointsList();
+    this.#sortView.updateCurrentSortType(sortType);
   };
 
-  #sortPoints = () => {
+  #sortPoints() {
     switch (this.#currentSortType) {
       case 'day':
         this.#filteredPoints = sortByDate(this.#filteredPoints);
@@ -196,5 +188,39 @@ export default class RoutePresenter {
       default:
         this.#filteredPoints = sortByDate(this.#filteredPoints);
     }
+  }
+
+  #renderEmptyMessage(filterType) {
+    const message = MESSAGES[filterType];
+    this.#emptyMessage = new EmptyMessageView(message);
+    render(this.#emptyMessage, this.#routeComponent.element);
+  }
+
+  #renderNewPointForm = () => {
+    this.#newPointForm = new EditEventView({
+      point: emptyPoint,
+      destinations: this.destinations,
+      offers: this.offers,
+      onSubmit: {},
+      onAbortion: this.#handleAbortion
+    });
+    render(this.#newPointForm, this.#routeContainer, RenderPosition.AFTERBEGIN);
   };
+
+  #addNewEventButtonClick = () => {
+    this.#currentFilter = 'everything';
+    this.#currentSortType = 'day';
+    this.#handleFilterChange(this.#currentFilter);
+    this.#handleSortTypeChange(this.#currentSortType);
+    this.#addNewBtn.element.disabled = true;
+    this.#handleModeChange();
+    this.#renderNewPointForm();
+  };
+
+  #handleAbortion = () => {
+    this.#addNewBtn.element.disabled = false;
+    remove(this.#newPointForm);
+  };
+
+  #addNewBtn = new AddNewButtonView({ onClick: this.#addNewEventButtonClick });
 }
