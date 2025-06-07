@@ -1,6 +1,6 @@
 # Проект «Большое путешествие»
 
-- Студент: [Александр Павленко](https://up.htmlacademy.ru/univer-js2/5/user/2502055).
+- Студент: [Александр Павленко](https://up.htmlacademy.ru/univer-js2/5/user/2502055). (Делает проект за ночь до финального ДД)
 - Наставник: `Владимир Вавщик`.
 
 ---
@@ -50,3 +50,4 @@ git clone SSH-адрес_вашего_форка
 
 [check-image]: https://github.com/htmlacademy-ecmascript/2502055-big-trip-5/workflows/Project%20check/badge.svg?branch=master
 [check-url]: https://github.com/htmlacademy-ecmascript/2502055-big-trip-5/actions
+
