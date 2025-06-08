@@ -1,3 +1,9 @@
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
+
 const getRandomNumber = (a, b) => {
   const lower = Math.ceil(Math.min(a, b));
   const upper = Math.floor(Math.max(a, b));
@@ -26,41 +32,47 @@ const getTotalPrice = (points) => {
 };
 
 const getTripDates = (points) => {
-  if (!points?.length) {
+  if (points.length === 0) {
     return '';
   }
 
-  const firstPoint = points[0];
-  const lastPoint = points[points.length - 1];
+  const startDate = dayjs(points[0].startDate).format('DD MMM');
+  const endDate = dayjs(points[points.length - 1].endDate).format('DD MMM');
 
-  if (!firstPoint?.startDate || !lastPoint?.endDate) {
-    return '';
-  }
+  return `${startDate} — ${endDate}`;
+};
 
-  try {
-    const startDate = new Date(firstPoint.startDate);
-    const endDate = new Date(lastPoint.endDate);
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
 
-    if (isNaN(startDate) || isNaN(endDate)) {
-      return '';
+const getTime = (date) => dayjs(date).format('HH:mm');
+const getDate = (date) => dayjs(date).format('YYYY-MM-DD');
+const formatDate = (date) => dayjs(date).format('DD MMM');
+
+const calculateDuration = (startDate, endDate) => {
+  const diff = dayjs(endDate).diff(dayjs(startDate));
+  const durationObj = dayjs.duration(diff);
+
+  const days = durationObj.days();
+  const hours = durationObj.hours();
+  const minutes = durationObj.minutes();
+
+  if (durationObj.asMinutes() < 60) {
+    return `${minutes.toString().padStart(2, '0')}M`;
+  } else if (durationObj.asMinutes() < 1440) {
+    if (minutes === 0) {
+      return `${hours.toString().padStart(2, '0')}H`;
     }
-
-    const formatDate = (date) => {
-      const day = date.getDate();
-      const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-      return `${day} ${month}`;
-    };
-
-    return `${formatDate(startDate)} — ${formatDate(endDate)}`;
-  } catch {
-    return '';
+    return `${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M`;
+  } else {
+    return `${days.toString().padStart(2, '0')}D ${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M`;
   }
 };
 
 const getTripName = (points) => {
   switch (points?.length) {
     case 0: return '';
-    case 1: return points[0].destination.city;
+    case 1: return `${points[0].destination.city}`;
     case 2: return `${points[0].destination.city} — ${points[1].destination.city}`;
     case 3: return `${points[0].destination.city} — ${points[1].destination.city} — ${points[2].destination.city}`;
     default: return `${points[0].destination.city} — ... — ${points[points.length - 1].destination.city}`;
@@ -91,4 +103,5 @@ const sortByDuration = (objects) => Array.from(
     return durB - durA;
   }));
 
-export {getRandomArrayElement, getRandomNumber, operatePrice, getTotalPrice, getTripName, getTripDates, sortByDate, sortByDuration, sortByPrice};
+export {getRandomArrayElement, getRandomNumber, operatePrice, getTotalPrice,
+  getTripName, getTripDates, sortByDate, sortByDuration, sortByPrice, getTime, getDate, formatDate, calculateDuration,};

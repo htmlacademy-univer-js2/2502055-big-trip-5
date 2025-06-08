@@ -1,53 +1,5 @@
 import AbstractView from '../framework/view/abstract-view.js';
-import {operatePrice} from '../utils.js';
-
-const getTime = (str) => {
-  const date = new Date(str);
-  const hrs = date.getHours().toString().padStart(2, '0');
-  const mins = date.getMinutes().toString().padStart(2, '0');
-  return `${hrs}:${mins}`;
-};
-
-const getDate = (str) => {
-  const date = new Date(str);
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const formatDate = (str) => {
-  const month = str.split('-')[1];
-  const day = str.split('-')[2];
-  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-
-  return `${day} ${months[parseInt(month, 10) - 1]}`;
-};
-
-const calculateDuration = (start, end) => {
-
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-
-  const разницаМс = endDate - startDate;
-  const totalMinutes = Math.floor(разницаМс / (1000 * 60));
-
-  const days = Math.floor(totalMinutes / (24 * 60));
-  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-  const minutes = totalMinutes % 60;
-
-  if (totalMinutes < 60) {
-    return `${minutes.toString().padStart(2, '0')}M`;
-  } else if (totalMinutes < 1440) {
-    if (minutes === 0) {
-      return `${hours.toString().padStart(2, '0')}H`;
-    }
-    return `${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M`;
-  } else {
-    return `${days.toString().padStart(2, '0')}D ${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M`;
-  }
-};
+import {operatePrice, getDate, getTime, calculateDuration, formatDate} from '../utils.js';
 
 const operateFavoriteButton = (flag) => {
   if (flag) {

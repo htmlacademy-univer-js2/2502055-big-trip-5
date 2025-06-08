@@ -1,12 +1,17 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
 
-const formatEditDate = (str) => {
-  if (str.length === 0) {
-    return str;
+const formatEditDate = (date) => {
+  if (!date) {
+    return '';
   }
-  const [date, time] = str.split('T');
-  const [year, month, day] = date.split('-');
-  return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year.slice(2)} ${time}`;
+  return dayjs(date).format('DD/MM/YY HH:mm');
 };
 
 const createDestinationsDatalist = (destinations) =>
@@ -42,6 +47,8 @@ export default class EditEventView extends AbstractStatefulView {
   #handleSubmit = null;
   #handleClose = null;
   #handleDelete = null;
+  #datepickerStart = null;
+  #datepickerEnd = null;
 
   constructor({point, destinations, offers, onSubmit, onClose, onDelete}) {
     super();
@@ -160,30 +167,86 @@ export default class EditEventView extends AbstractStatefulView {
     `;
   }
 
+  #startDateChangeHandler = ([userDate]) => {
+    const formattedDate = dayjs(userDate).format('YYYY-MM-DDTHH:mm');
+    this.updateElement({
+      startDate: formattedDate
+    });
+    this.#datepickerEnd.set('minDate', userDate);
+
+    const formattedDisplayDate = dayjs(userDate).format('DD/MM/YY HH:mm');
+    this.element.querySelector('[name="event-start-time"]').value = formattedDisplayDate;
+  };
+
+  #endDateChangeHandler = ([userDate]) => {
+    const formattedDate = dayjs(userDate).format('YYYY-MM-DDTHH:mm');
+    this.updateElement({
+      endDate: formattedDate
+    });
+
+    const formattedDisplayDate = dayjs(userDate).format('DD/MM/YY HH:mm');
+    this.element.querySelector('[name="event-end-time"]').value = formattedDisplayDate;
+  };
+
+  #initDatepickers() {
+    const commonConfig = {
+      enableTime: true,
+      dateFormat: 'd/m/y H:i',
+      altInput: true,
+      altFormat: 'd/m/y H:i',
+      // eslint-disable-next-line camelcase
+      time_24hr: true,
+      allowInput: true,
+      locale: {
+        firstDayOfWeek: 1
+      }
+    };
+
+    const defaultStartDate = this._state.startDate
+      ? dayjs(this._state.startDate).format('DD/MM/YY HH:mm')
+      : '';
+    const defaultEndDate = this._state.endDate
+      ? dayjs(this._state.endDate).format('DD/MM/YY HH:mm')
+      : '';
+
+    const startDateElement = this.element.querySelector('[name="event-start-time"]');
+    this.#datepickerStart = flatpickr(startDateElement, {
+      ...commonConfig,
+      defaultDate: defaultStartDate,
+      onChange: this.#startDateChangeHandler
+    });
+
+    const endDateElement = this.element.querySelector('[name="event-end-time"]');
+    this.#datepickerEnd = flatpickr(endDateElement, {
+      ...commonConfig,
+      defaultDate: defaultEndDate,
+      minDate: this._state.startDate,
+      onChange: this.#endDateChangeHandler
+    });
+
+    if (defaultStartDate) {
+      startDateElement.value = defaultStartDate;
+    }
+    if (defaultEndDate) {
+      endDateElement.value = defaultEndDate;
+    }
+  }
+
   _restoreHandlers() {
-    // Тип точки
     this.element.querySelectorAll('.event__type-input').forEach((input) =>
       input.addEventListener('change', this.#typeChangeHandler)
     );
 
-    // Пункт назначения
     this.element.querySelector('.event__input--destination')
       .addEventListener('change', this.#destinationChangeHandler);
 
-    // Офферы
     this.element.querySelectorAll('.event__offer-checkbox').forEach((checkbox) =>
       checkbox.addEventListener('change', this.#offerChangeHandler)
     );
 
-    // Даты и цена
-    this.element.querySelector('.event__input--time[name="event-start-time"]')
-      .addEventListener('change', this.#dateChangeHandler);
-    this.element.querySelector('.event__input--time[name="event-end-time"]')
-      .addEventListener('change', this.#dateChangeHandler);
     this.element.querySelector('.event__input--price')
       .addEventListener('change', this.#priceChangeHandler);
 
-    // Кнопки
     this.element.addEventListener('submit', this.#formSubmitHandler);
     this.element.querySelector('.event__reset-btn')
       .addEventListener('click', this.#formResetHandler);
@@ -191,12 +254,14 @@ export default class EditEventView extends AbstractStatefulView {
     if (this.#handleClose) {
       this.element.querySelector('.event__rollup-btn')?.addEventListener('click', this.#closeClickHandler);
     }
+
+    this.#initDatepickers();
   }
 
   #typeChangeHandler = (evt) => {
     this.updateElement({
       type: evt.target.value.charAt(0).toUpperCase() + evt.target.value.slice(1),
-      offers: [] // Сбрасываем офферы при смене типа
+      offers: []
     });
   };
 
@@ -221,16 +286,6 @@ export default class EditEventView extends AbstractStatefulView {
     this.updateElement({offers: newOffers});
   };
 
-  #dateChangeHandler = (evt) => {
-    const [date, time] = evt.target.value.split(' ');
-    const [day, month, year] = date.split('/');
-    const field = evt.target.name === 'event-start-time' ? 'startDate' : 'endDate';
-
-    this.updateElement({
-      [field]: `20${year}-${month}-${day}T${time}`
-    });
-  };
-
   #priceChangeHandler = (evt) => {
     this.updateElement({
       price: parseInt(evt.target.value, 10)
@@ -251,4 +306,18 @@ export default class EditEventView extends AbstractStatefulView {
     evt.preventDefault();
     this.#handleClose();
   };
+
+  removeElement() {
+    super.removeElement();
+
+    if (this.#datepickerStart) {
+      this.#datepickerStart.destroy();
+      this.#datepickerStart = null;
+    }
+
+    if (this.#datepickerEnd) {
+      this.#datepickerEnd.destroy();
+      this.#datepickerEnd = null;
+    }
+  }
 }

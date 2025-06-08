@@ -16,12 +16,14 @@ function createNewInfoTemplate(points) {
 }
 
 export default class InfoView extends AbstractView{
+  #points = [];
+
   constructor(points) {
     super();
-    this.points = points;
+    this.#points = points;
   }
 
   get template() {
-    return createNewInfoTemplate(this.points);
+    return createNewInfoTemplate(this.#points);
   }
 }
