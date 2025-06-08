@@ -27,6 +27,7 @@ export default class RoutePresenter {
   #filteredPoints = [];
   #emptyMessage = null;
   #pointPresenters = new Map();
+  #infoView = null;
 
   constructor({ routeContainer, pointsModel, headerContainer }) {
     this.#routeContainer = routeContainer;
@@ -54,12 +55,14 @@ export default class RoutePresenter {
     this.#filterPoints();
     this.#sortPoints();
     this.#renderPointsList();
+    this.#updateHeaderInfo();
 
   }
 
   #renderHeader() {
+    this.#infoView = new InfoView(this.#filteredPoints);
     render(this.#headerComponent, this.#headerContainer);
-    render(new InfoView(this.points), this.#headerComponent.element);
+    render(this.#infoView, this.#headerComponent.element);
     render(this.#filterView, this.#headerComponent.element);
     render(this.#addNewBtn, this.#headerComponent.element, RenderPosition.BEFOREEND);
   }
@@ -92,12 +95,22 @@ export default class RoutePresenter {
     this.#pointPresenters.set(point.id, pointPresenter);
   }
 
+  #updateHeaderInfo() {
+    if (this.#infoView) {
+      remove(this.#infoView);
+    }
+
+    this.#infoView = new InfoView(this.#filteredPoints);
+    render(this.#infoView, this.#headerComponent.element, RenderPosition.AFTERBEGIN);
+  }
+
   #updatePointsData() {
     this.points = this.#pointsModel.points;
     this.#filterPoints();
     this.#sortPoints();
     this.#clearPointsList();
     this.#renderPointsList();
+    this.#updateHeaderInfo();
   }
 
   #clearPointsList() {
