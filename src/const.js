@@ -1,5 +1,8 @@
 import { getRandomNumber } from './utils.js';
 
+const MIN_ID = 0;
+const MAX_ID = 5000;
+
 const defaultDestination = {
   city: '',
   description: '',
@@ -24,4 +27,4 @@ const MESSAGES = {
   'everything': 'Click New Event to create your first point'
 };
 
-export {emptyPoint, MESSAGES};
+export {emptyPoint, MESSAGES, MIN_ID, MAX_ID};
