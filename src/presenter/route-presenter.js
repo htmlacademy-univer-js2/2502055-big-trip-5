@@ -18,7 +18,6 @@ export default class RoutePresenter {
   #pointsModel = null;
   #sortView = null;
   #newPointForm = null;
-  // #currentFilter = 'everything';
   #currentSortType = 'day';
   #filteredPoints = [];
   #emptyMessage = null;
@@ -54,11 +53,10 @@ export default class RoutePresenter {
   }
 
   #handleModelEvent = () => {
-    console.log('Filter model changed, current filter:', this.#filterModel.filter); // Лог
     this.#currentSortType = 'day';
     this.#sortView.updateCurrentSortType('day');
     this.#updatePointsData();
-};
+  };
 
   #renderHeader() {
     this.#infoView = new InfoView(this.points);
