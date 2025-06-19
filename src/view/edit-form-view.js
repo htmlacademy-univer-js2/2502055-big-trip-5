@@ -38,8 +38,10 @@ const drawDestinationInfo = (destination) => {
   return `${html}</section>`;
 };
 
-const getAvailableOffers = (offers, pointType) =>
-  offers.filter((offer) => offer.type === pointType);
+const getAvailableOffers = (offers, pointType) => {
+  const offerType = offers.find((offer) => offer.type === pointType.toLowerCase());
+  return offerType ? offerType.offers : [];
+};
 
 export default class EditEventView extends AbstractStatefulView {
   #destinations = null;
@@ -152,11 +154,11 @@ export default class EditEventView extends AbstractStatefulView {
           ${availableOffers.map((offer) => `
             <div class="event__offer-selector">
               <input class="event__offer-checkbox visually-hidden"
-                     id="offer-${offer.label.replace(/\s+/g, '-').toLowerCase()}"
+                     id="offer-${offer.id}"
                      type="checkbox" name="event-offer"
-                     ${this._state.offers.some((o) => o.label === offer.label) ? 'checked' : ''}>
-              <label class="event__offer-label" for="offer-${offer.label.replace(/\s+/g, '-').toLowerCase()}">
-                <span class="event__offer-title">${offer.label}</span>
+                     ${this._state.offers.some((o) => o.id === offer.id) ? 'checked' : ''}>
+              <label class="event__offer-label" for="offer-${offer.id}">
+                <span class="event__offer-title">${offer.title}</span>
                 &plus;&euro;&nbsp;
                 <span class="event__offer-price">${offer.price}</span>
               </label>
@@ -248,11 +250,17 @@ export default class EditEventView extends AbstractStatefulView {
       .addEventListener('change', this.#priceChangeHandler);
 
     this.element.addEventListener('submit', this.#formSubmitHandler);
-    this.element.querySelector('.event__reset-btn')
-      .addEventListener('click', this.#formResetHandler);
 
-    if (this.#handleClose) {
-      this.element.querySelector('.event__rollup-btn')?.addEventListener('click', this.#closeClickHandler);
+    const rollupButton = this.element.querySelector('.event__rollup-btn');
+    if (rollupButton) {
+      rollupButton.addEventListener('click', this.#closeClickHandler);
+    }
+
+    const resetButton = this.element.querySelector('.event__reset-btn');
+    if (this.#handleDelete) {
+      resetButton.addEventListener('click', this.#handleDeleteClick);
+    } else {
+      resetButton.addEventListener('click', this.#formResetHandler);
     }
 
     this.#initDatepickers();
@@ -273,17 +281,28 @@ export default class EditEventView extends AbstractStatefulView {
   };
 
   #offerChangeHandler = (evt) => {
-    const offerLabel = evt.target.nextElementSibling.querySelector('.event__offer-title').textContent;
-    const newOffers = [...this._state.offers];
-    const offerIndex = newOffers.findIndex((o) => o.label === offerLabel);
+    const offerId = evt.target.id.replace('offer-', '');
+    const currentOffers = this._state.offers || []; // Добавляем проверку на существование offers
+    const newOffers = [...currentOffers];
+    const offerIndex = newOffers.findIndex((o) => o.id === offerId);
+    const availableOffers = getAvailableOffers(this.#offers, this._state.type);
 
     if (evt.target.checked && offerIndex === -1) {
-      newOffers.push(this.#offers.find((o) => o.label === offerLabel && o.type === this._state.type));
+      const selectedOffer = availableOffers.find((o) => o.id === offerId);
+      if (selectedOffer) {
+        newOffers.push({
+          id: selectedOffer.id,
+          title: selectedOffer.title,
+          price: selectedOffer.price
+        });
+      }
     } else if (!evt.target.checked && offerIndex !== -1) {
       newOffers.splice(offerIndex, 1);
     }
 
-    this.updateElement({offers: newOffers});
+    this.updateElement({
+      offers: newOffers
+    });
   };
 
   #priceChangeHandler = (evt) => {
@@ -305,6 +324,11 @@ export default class EditEventView extends AbstractStatefulView {
   #closeClickHandler = (evt) => {
     evt.preventDefault();
     this.#handleClose();
+  };
+
+  #handleDeleteClick = (evt) => {
+    evt.preventDefault();
+    this.#handleDelete(this._state);
   };
 
   removeElement() {
