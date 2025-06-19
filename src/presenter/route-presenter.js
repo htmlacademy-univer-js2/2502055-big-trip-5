@@ -38,7 +38,8 @@ export default class RoutePresenter {
     });
   }
 
-  init() {
+  async init() {
+    await this.#pointsModel.init();
     this.points = this.#pointsModel.points;
     this.destinations = this.#pointsModel.destinations;
     this.offers = this.#pointsModel.offers;
@@ -121,17 +122,15 @@ export default class RoutePresenter {
     this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
 
-  #handlePointsChange = (actionType, updatedPoint) => {
+  #handlePointsChange = async (actionType, updatedPoint) => {
     switch (actionType) {
       case 'UPDATE':
-        this.#pointsModel.updatePoint(updatedPoint);
-        this.#updatePointsData();
+        await this.#pointsModel.updatePoint(updatedPoint);
         break;
       case 'DELETE':
-        this.#pointsModel.deletePoint(updatedPoint.id);
+        await this.#pointsModel.deletePoint(updatedPoint.id);
         this.#pointPresenters.get(updatedPoint.id).destroy();
         this.#pointPresenters.delete(updatedPoint.id);
-        this.#updatePointsData();
         break;
       case 'ADD':
         updatedPoint.id = getRandomNumber(MIN_ID, MAX_ID);
@@ -140,11 +139,10 @@ export default class RoutePresenter {
         break;
     }
 
-    this.#applyFilterAndUpdate();
+    this.#updatePointsData();
   };
 
   #applyFilterAndUpdate = () => {
-    this.points = this.#pointsModel.points;
     this.#filterPoints();
     this.#sortPoints();
     this.#clearPointsList();

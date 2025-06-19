@@ -4,9 +4,10 @@ import FilterPresenter from './presenter/filter-presenter.js';
 import FilterModel from './model/filter-model.js';
 import HeaderView from './view/header-view.js';
 import { render} from './framework/render.js';
+import Api from './api-adapter.js';
 
-
-const pointsModel = new PointsModel();
+const apiAdaprter = new Api();
+const pointsModel = new PointsModel(apiAdaprter);
 const filterModel = new FilterModel();
 const mainElement = document.querySelector('.page-main');
 const headerElement = document.querySelector('.page-header__container');

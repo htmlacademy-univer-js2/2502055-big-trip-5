@@ -1,25 +1,18 @@
-export default class FilterModel {
+import Observable from '../framework/observable.js';
+
+export default class FilterModel extends Observable {
   #filter = 'everything';
-  #observers = [];
 
   get filter() {
     return this.#filter;
-  }
-
-  addObserver(observer) {
-    this.#observers.push(observer);
   }
 
   setFilter(filterType, notify = true) {
     if (this.#filter !== filterType) {
       this.#filter = filterType;
       if (notify) {
-        this.#notifyObservers();
+        this._notify('filter-change', this.#filter);
       }
     }
-  }
-
-  #notifyObservers() {
-    this.#observers.forEach((observer) => observer());
   }
 }
