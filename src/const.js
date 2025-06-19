@@ -1,5 +1,3 @@
-import { getRandomNumber } from './utils.js';
-
 const MIN_ID = 0;
 const MAX_ID = 5000;
 
@@ -10,7 +8,6 @@ const defaultDestination = {
 };
 
 const emptyPoint = {
-  id: getRandomNumber(0, 500),
   type: 'Flight',
   startDate: '',
   endDate: '',
