@@ -5,8 +5,8 @@ import SortView from '../view/sort-view.js';
 import AddNewButtonView from '../view/add-new-button-view.js';
 import InfoView from '../view/trip-info-view.js';
 import EmptyMessageView from '../view/empty-message-views.js';
-import {emptyPoint, MAX_ID, MESSAGES, MIN_ID } from '../const.js';
-import { getRandomNumber, sortByDate, sortByDuration, sortByPrice } from '../utils.js';
+import {emptyPoint, MESSAGES } from '../const.js';
+import { sortByDate, sortByDuration, sortByPrice } from '../utils.js';
 import PointPresenter from './point-presenter.js';
 import EditEventView from '../view/edit-form-view.js';
 
@@ -133,9 +133,7 @@ export default class RoutePresenter {
         this.#pointPresenters.delete(updatedPoint.id);
         break;
       case 'ADD':
-        updatedPoint.id = getRandomNumber(MIN_ID, MAX_ID);
-        this.#pointsModel.addPoint(updatedPoint);
-        this.#updatePointsData();
+        await this.#pointsModel.addPoint(updatedPoint);
         break;
     }
 
@@ -224,10 +222,16 @@ export default class RoutePresenter {
     this.#renderNewPointForm();
   };
 
-  #handleFormSubmit = (point) => {
-    this.#handlePointsChange('ADD', point);
-    this.#addNewBtn.element.disabled = false;
-    remove(this.#newPointForm);
+  #handleFormSubmit = async (point) => {
+    try {
+      this.#newPointForm.setSaving();
+      await this.#handlePointsChange('ADD', point);
+      this.#addNewBtn.element.disabled = false;
+      remove(this.#newPointForm);
+    } catch {
+      this.#newPointForm.shake();
+      this.#newPointForm.resetButtonState();
+    }
   };
 
   #handleAbortion = () => {

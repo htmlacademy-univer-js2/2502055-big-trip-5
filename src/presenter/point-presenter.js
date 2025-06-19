@@ -117,14 +117,27 @@ export default class PointPresenter {
     this.#handleDataChange('UPDATE', { ...this.#point, isFavorite: !this.#point.isFavorite });
   };
 
-  #handleFormSubmit = (point) => {
-    this.#handleDataChange('UPDATE', point);
-    this.#replaceFormToPoint();
+  #handleFormSubmit = async (point) => {
+    try {
+      this.#editPointComponent.setSaving();
+      await this.#handleDataChange('UPDATE', point);
+      this.#replaceFormToPoint();
+    } catch {
+      this.#editPointComponent.shake();
+      this.#editPointComponent.resetButtonState();
+    }
   };
 
-  #handlePointDeletion = () => {
-    this.#handleDataChange('DELETE', this.#point);
+  #handlePointDeletion = async () => {
+    try {
+      this.#editPointComponent.setDeleting();
+      await this.#handleDataChange('DELETE', this.#point);
+    } catch {
+      this.#editPointComponent.shake();
+      this.#editPointComponent.resetButtonState();
+    }
   };
+
 
   #handleFormClose = () => {
     this.#replaceFormToPoint();

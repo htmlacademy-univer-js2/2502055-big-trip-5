@@ -169,6 +169,57 @@ export default class EditEventView extends AbstractStatefulView {
     `;
   }
 
+  setSaving() {
+    const saveButton = this.element.querySelector('.event__save-btn');
+    const resetButton = this.element.querySelector('.event__reset-btn');
+
+    saveButton.textContent = 'Saving...';
+    saveButton.disabled = true;
+    resetButton.disabled = true;
+
+    if (this.element.querySelector('.event__rollup-btn')) {
+      this.element.querySelector('.event__rollup-btn').disabled = true;
+    }
+  }
+
+  setDeleting() {
+    const resetButton = this.element.querySelector('.event__reset-btn');
+    resetButton.textContent = 'Deleting...';
+    resetButton.disabled = true;
+
+    this.element.querySelector('.event__save-btn').disabled = true;
+
+    if (this.element.querySelector('.event__rollup-btn')) {
+      this.element.querySelector('.event__rollup-btn').disabled = true;
+    }
+  }
+
+  resetButtonState() {
+    const saveButton = this.element.querySelector('.event__save-btn');
+    const resetButton = this.element.querySelector('.event__reset-btn');
+
+    saveButton.textContent = 'Save';
+    saveButton.disabled = false;
+
+    resetButton.textContent = this.#handleDelete ? 'Delete' : 'Cancel';
+    resetButton.disabled = false;
+
+    if (this.element.querySelector('.event__rollup-btn')) {
+      this.element.querySelector('.event__rollup-btn').disabled = false;
+    }
+  }
+
+  shake() {
+    this.element.style.animation = 'shake 0.6s';
+
+    const onAnimationEnd = () => {
+      this.element.style.animation = '';
+      this.element.removeEventListener('animationend', onAnimationEnd);
+    };
+
+    this.element.addEventListener('animationend', onAnimationEnd);
+  }
+
   #startDateChangeHandler = ([userDate]) => {
     const formattedDate = dayjs(userDate).format('YYYY-MM-DDTHH:mm');
     this.updateElement({

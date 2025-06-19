@@ -1,5 +1,4 @@
 /* eslint-disable camelcase */
-// api.js
 import ApiService from './framework/api-service.js';
 
 const AUTHORIZATION = 'Basic pavl3nus:1234';
@@ -56,6 +55,25 @@ export default class Api {
     const updatedPoint = await ApiService.parseResponse(response);
 
     return this._adaptPointsToClient([updatedPoint])[0];
+  }
+
+  async addPoint(point) {
+    const response = await this._apiService._load({
+      url: 'points',
+      method: 'POST',
+      body: JSON.stringify(this._adaptPointToServer(point)),
+      headers: new Headers({'Content-Type': 'application/json'})
+    });
+
+    const newPoint = await ApiService.parseResponse(response);
+    return this._adaptPointsToClient([newPoint])[0];
+  }
+
+  async deletePoint(pointId) {
+    await this._apiService._load({
+      url: `points/${pointId}`,
+      method: 'DELETE'
+    });
   }
 
   _adaptPointsToClient(points) {
